@@ -1,0 +1,3 @@
+/home/alex/workspace/clion_projects/lexer+syntaxer/cmake-build-debug/CMakeFiles/rebuild_cache.dir
+/home/alex/workspace/clion_projects/lexer+syntaxer/cmake-build-debug/CMakeFiles/lexer_syntaxer.dir
+/home/alex/workspace/clion_projects/lexer+syntaxer/cmake-build-debug/CMakeFiles/edit_cache.dir
