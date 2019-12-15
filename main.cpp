@@ -26,9 +26,26 @@ struct Token {
     std::string value;
 };
 
+std::string ParseTicks(const std::string& res) {
+    std::stringstream ss(res);
+    std::string tmp, result;
+    while (getline(ss, tmp, '"')) {
+        result+=tmp;
+    }
+    return result;
+}
+
 bool IsReg(const std::string& res) {
+    bool in_tick = 0;
     for (const auto& ch : res) {
-        if (ch == '*' || ch == '?') {
+        if (ch == '"') {
+            if (in_tick) {
+                in_tick = 0;
+            } else {
+                in_tick = 1;
+            }
+        }
+        if (!in_tick && (ch == '*' || ch == '?')) {
             return true;
         }
     }
@@ -161,6 +178,9 @@ public:
             auto tok = tokens[i];
             char prev = state;
             state = M[tok._type][state];
+            if (state == 100) {
+                throw std::domain_error("Unexpected token: " + tok.value);
+            }
             if (state == 6) {
                 result.params.push_back(part);
                 part.clear();
@@ -180,16 +200,23 @@ public:
             if (part.size()) {
                 result.params.push_back(part);
             }
+        } else {
+            throw std::domain_error("Expected token");
         }
         return result;
     }
 
 private:
     std::vector<std::string> GetParams(Token& tok) {
-        return {tok.value};
+        if (!IsReg(tok.value)) {
+            return {ParseTicks(tok.value)};
+        } else {
+            return {tok.value};
+        }
     }
     std::string GetParam(Token& tok) {
-        return tok.value;
+        auto t = GetParams(tok);
+        return t.size() ? t[0] : "";
     }
     void MakeAutomat() {
         M = {
@@ -215,13 +242,19 @@ int main() {
         try {
             result = a.Analize(res);
         } catch (std::exception& exc) {
-            std::cout << exc.what() << "\n";
+            std::cout << "Lexical error: " << exc.what() << "\n";
+            continue;
         }
-        for (const auto& item : result) {
+        for (const auto &item : result) {
             std::cout << item.value << " " << item._type << "\n";
         }
         std::cout << "Syntaxed:\n";
-        task = b.Syntax(result);
+        try {
+            task = b.Syntax(result);
+        } catch (std::exception& exc) {
+            std::cout << "Syntax error: " << exc.what() << "\n";
+            continue;
+        }
         std::cout << "Input: "+task.input+" , Output: "+task.output << "\n";
         for (unsigned long i = 0; i < task.params.size(); i++) {
             std::cout << i << ": ";
